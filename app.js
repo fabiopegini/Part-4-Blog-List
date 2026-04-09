@@ -12,7 +12,7 @@ dns.setServers(['1.1.1.1'])
 
 logger.info('conecting to DB...')
 
-mongoose.connect(config.MONGODB_URI, { dbName: 'bloglist' })
+mongoose.connect(config.MONGODB_URI, { dbName: config.MONGODB_DBNAME })
 .then(() => {
   logger.info('connected to DB')
 })
