@@ -29,6 +29,15 @@ describe('api tests', () => {
 
     assert.strictEqual(response.body.length, helper.sampleBlogs.length)
   })
+
+  test('blogs have a key named id instead of _id', async () => {
+    const blogs = await helper.getAllBlogs()
+
+    const blogsKeys = blogs.map(blog => Object.keys(blog))
+
+    assert.strictEqual(blogsKeys[0].includes('id'), true)
+    assert.strictEqual(blogsKeys[0].includes('_id'), false)
+  })
   
   after(async () => {
     await mongoose.connection.close()
