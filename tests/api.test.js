@@ -8,7 +8,7 @@ const api = supertest(app)
 
 const Blog = require('../models/blog')
 
-describe('api tests', () => {
+describe('api tests with some blogs already in the db', () => {
   beforeEach(async () => {
     await Blog.deleteMany()
   
@@ -39,74 +39,90 @@ describe('api tests', () => {
     assert.strictEqual(blogsKeys[0].includes('_id'), false)
   })
 
-  test('a new blog can be added successfully and with the intended content', async () => {
+
+  describe('add one blog tests', () => {
+    test('a new blog can be added successfully and with the intended content', async () => {
+      const oldBlogs = await helper.getAllBlogs()
+
+      const newBlog = {
+        title: "New Added Blog",
+        author: "John Doe",
+        url: "https://fullstackopen.com/",
+        likes: 50,
+      }
+      
+      const response = await api.post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-type', /application\/json/)
+      
+      const newBlogs = await helper.getAllBlogs()
+
+      const newBlogWithId = { id: response.body.id, ...newBlog}
+
+      assert.strictEqual(newBlogs.length, oldBlogs.length + 1)
+      assert.deepStrictEqual(response.body, newBlogWithId)
+    })
+
+    test('default value for a blog\'s likes is 0', async () => {
+      const newBlog = {
+        title: "A blog that is added without a likes key",
+        author: "Jane Doe",
+        url: "https://fullstackopen.com/",
+      }
+
+      const response = await api.post('/api/blogs')
+      .send(newBlog)
+
+      assert.strictEqual(response.body.likes, 0)
+    })
+
+    test('trying to add an incomplete blog receive a response with status code 400 Bad Request', async () => {
+      const newBlogNoAuthor = {
+        title: "No author blog",
+        url: "https://fullstackopen.com/",
+        likes: 0
+      }
+
+      const newBlogNoTitle = {
+        author: "Jane Doe, No title blog",
+        url: "https://fullstackopen.com/",
+        likes: 0
+      }
+
+      const newBlogNoUrl = {
+        title: 'Blog without a url',
+        author: "Jane Doe, No title blog",
+        likes: 0
+      }
+
+      const noAuthorResponse = await api.post('/api/blogs')
+      .send(newBlogNoAuthor)
+      const noTitleResponse = await api.post('/api/blogs')
+      .send(newBlogNoTitle)
+      const noUrlResponse = await api.post('/api/blogs')
+      .send(newBlogNoUrl)
+
+      assert.strictEqual(noAuthorResponse.statusCode, 400)
+      assert.strictEqual(noTitleResponse.statusCode, 400)
+      assert.strictEqual(noUrlResponse.statusCode, 400)
+    })
+  })
+
+  test('delete one blog tests', async () => {
     const oldBlogs = await helper.getAllBlogs()
+    const blogToDelete = oldBlogs[0]
 
-    const newBlog = {
-      title: "New Added Blog",
-      author: "John Doe",
-      url: "https://fullstackopen.com/",
-      likes: 50,
-    }
-    
-    const response = await api.post('/api/blogs')
-    .send(newBlog)
-    .expect(201)
-    .expect('Content-type', /application\/json/)
-    
-    const newBlogs = await helper.getAllBlogs()
+    await api.delete('/api/blogs/' + blogToDelete.id)
+    .expect(200)
 
-    const newBlogWithId = { id: response.body.id, ...newBlog}
+    const blogsAfter = await helper.getAllBlogs()
 
-    assert.strictEqual(newBlogs.length, oldBlogs.length + 1)
-    assert.deepStrictEqual(response.body, newBlogWithId)
+    assert.strictEqual(blogsAfter.length, oldBlogs.length - 1)
+    assert.strictEqual(blogsAfter.includes(blogToDelete), false)
   })
+})
 
-  test('default value for a blog\'s likes is 0', async () => {
-    const newBlog = {
-      title: "A blog that is added without a likes key",
-      author: "Jane Doe",
-      url: "https://fullstackopen.com/",
-    }
-
-    const response = await api.post('/api/blogs')
-    .send(newBlog)
-
-    assert.strictEqual(response.body.likes, 0)
-  })
-
-  test('trying to add an incomplete blog receive a response with status code 400 Bad Request', async () => {
-    const newBlogNoAuthor = {
-      title: "No author blog",
-      url: "https://fullstackopen.com/",
-      likes: 0
-    }
-
-    const newBlogNoTitle = {
-      author: "Jane Doe, No title blog",
-      url: "https://fullstackopen.com/",
-      likes: 0
-    }
-
-    const newBlogNoUrl = {
-      title: 'Blog without a url',
-      author: "Jane Doe, No title blog",
-      likes: 0
-    }
-
-    const noAuthorResponse = await api.post('/api/blogs')
-    .send(newBlogNoAuthor)
-    const noTitleResponse = await api.post('/api/blogs')
-    .send(newBlogNoTitle)
-    const noUrlResponse = await api.post('/api/blogs')
-    .send(newBlogNoUrl)
-
-    assert.strictEqual(noAuthorResponse.statusCode, 400)
-    assert.strictEqual(noTitleResponse.statusCode, 400)
-    assert.strictEqual(noUrlResponse.statusCode, 400)
-  })
-  
-  after(async () => {
-    await mongoose.connection.close()
-  })
+after(async () => {
+  await mongoose.connection.close()
 })
