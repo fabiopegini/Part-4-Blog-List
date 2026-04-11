@@ -38,6 +38,29 @@ describe('api tests', () => {
     assert.strictEqual(blogsKeys[0].includes('id'), true)
     assert.strictEqual(blogsKeys[0].includes('_id'), false)
   })
+
+  test('a new blog can be added successfully and with the intended content', async () => {
+    const oldBlogs = await helper.getAllBlogs()
+
+    const newBlog = {
+      title: "New Added Blog",
+      author: "John Doe",
+      url: "https://fullstackopen.com/",
+      likes: 50,
+    }
+    
+    const response = await api.post('/api/blogs')
+    .send(newBlog)
+    .expect(201)
+    .expect('Content-type', /application\/json/)
+    
+    const newBlogs = await helper.getAllBlogs()
+
+    const newBlogWithId = { id: response.body.id, ...newBlog}
+
+    assert.strictEqual(newBlogs.length, oldBlogs.length + 1)
+    assert.deepStrictEqual(response.body, newBlogWithId)
+  })
   
   after(async () => {
     await mongoose.connection.close()
