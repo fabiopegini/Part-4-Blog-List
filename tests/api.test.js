@@ -109,7 +109,7 @@ describe('api tests with some blogs already in the db', () => {
     })
   })
 
-  test('delete one blog tests', async () => {
+  test('delete one blog', async () => {
     const oldBlogs = await helper.getAllBlogs()
     const blogToDelete = oldBlogs[0]
 
@@ -120,6 +120,52 @@ describe('api tests with some blogs already in the db', () => {
 
     assert.strictEqual(blogsAfter.length, oldBlogs.length - 1)
     assert.strictEqual(blogsAfter.includes(blogToDelete), false)
+  })
+
+  describe('modifiy one blog', async () => {
+    const allBlogs = await helper.getAllBlogs()
+
+    const blogToModify = allBlogs[0]
+
+    test('title can be modified', async () => {
+      const modifiedData = { title: 'This blog was modified' }
+
+      const response = await api.put('/api/blogs/' + blogToModify.id)
+      .send(modifiedData)
+      .expect(200)
+      
+      assert.strictEqual(response.body.result.title, modifiedData.title)
+    })
+    
+    test('author can be modified', async () => {
+      const modifiedData = { author: 'This author\'s blog was modified' }
+
+      const response = await api.put('/api/blogs/' + blogToModify.id)
+      .send(modifiedData)
+      .expect(200)
+      
+      assert.strictEqual(response.body.result.author, modifiedData.author)
+    })
+
+    test('url can be modified', async () => {
+      const modifiedData = { url: 'This url\'s blog was modified' }
+
+      const response = await api.put('/api/blogs/' + blogToModify.id)
+      .send(modifiedData)
+      .expect(200)
+      
+      assert.strictEqual(response.body.result.url, modifiedData.url)
+    })
+
+    test('likes can be modified', async () => {
+      const modifiedData = { likes: 999 }
+
+      const response = await api.put('/api/blogs/' + blogToModify.id)
+      .send(modifiedData)
+      .expect(200)
+      
+      assert.strictEqual(response.body.result.likes, modifiedData.likes)
+    })
   })
 })
 
