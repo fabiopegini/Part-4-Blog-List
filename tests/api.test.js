@@ -74,6 +74,37 @@ describe('api tests', () => {
 
     assert.strictEqual(response.body.likes, 0)
   })
+
+  test('trying to add an incomplete blog receive a response with status code 400 Bad Request', async () => {
+    const newBlogNoAuthor = {
+      title: "No author blog",
+      url: "https://fullstackopen.com/",
+      likes: 0
+    }
+
+    const newBlogNoTitle = {
+      author: "Jane Doe, No title blog",
+      url: "https://fullstackopen.com/",
+      likes: 0
+    }
+
+    const newBlogNoUrl = {
+      title: 'Blog without a url',
+      author: "Jane Doe, No title blog",
+      likes: 0
+    }
+
+    const noAuthorResponse = await api.post('/api/blogs')
+    .send(newBlogNoAuthor)
+    const noTitleResponse = await api.post('/api/blogs')
+    .send(newBlogNoTitle)
+    const noUrlResponse = await api.post('/api/blogs')
+    .send(newBlogNoUrl)
+
+    assert.strictEqual(noAuthorResponse.statusCode, 400)
+    assert.strictEqual(noTitleResponse.statusCode, 400)
+    assert.strictEqual(noUrlResponse.statusCode, 400)
+  })
   
   after(async () => {
     await mongoose.connection.close()

@@ -21,7 +21,7 @@ blogsRouter.get('/:id', (request, response, next) => {
 blogsRouter.post('/', (request, response, next) => {
   const body = request.body
 
-  if (!body.title || !body.author || !body.url) return response.status(400).send({ error: 'Missing data. A new blog must have a Title, an Author, a URL and a number of Likes' })
+  if (!body.title || !body.author || !body.url) return response.status(400).send({ error: 'Missing data. A new blog must have a Title, an Author, and a URL. Also, may or may not have the amount of Likes it has' })
 
   const newBlog = new Blog({
     title: body.title,
