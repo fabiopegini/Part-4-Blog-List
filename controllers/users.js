@@ -15,7 +15,9 @@ usersRouter.get('/', async (request, response, next) => {
 usersRouter.post('/', async (request, response, next) => {
   const { username, name, password } = request.body
 
-  if(!username || !name || !password) return response.status(400).json({ error: 'Missing data, a new user must have: Name, Username and Password' })
+  if(!name || !password) return response.status(400).json({ error: 'Missing data, a new user must have: Name, Username and Password' })
+
+  if(password.length < 4) return response.status(400).json({ error: 'The Password must have at least 3 characters' })
 
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(password, saltRounds)
