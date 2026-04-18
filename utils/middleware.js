@@ -18,12 +18,15 @@ const getTokenFrom = (request) => {
 
 const tokenExtractor = (request, response, next) => {
   const tokenFromReq = getTokenFrom(request)
-  const decodedToken = jwt.verify(tokenFromReq, process.env.SECRET)
-
-  if(!decodedToken.id) return response.status(401).json({ error: 'invalid token' })
-
-  request.token = decodedToken
-
+  request.token = tokenFromReq
+    
+  next()
+}
+  
+const userExtractor = (request, response, next) => {
+  const userFromToken = jwt.verify(request.token, process.env.SECRET)  
+  request.user = userFromToken
+  
   next()
 }
 
@@ -47,5 +50,6 @@ module.exports = {
   requestLogger, 
   handle404, 
   errorHandler,
-  tokenExtractor
+  tokenExtractor,
+  userExtractor
 }

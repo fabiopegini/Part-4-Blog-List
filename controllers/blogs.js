@@ -29,7 +29,8 @@ blogsRouter.post('/', async (request, response, next) => {
 
   if (!body.title || !body.author || !body.url) return response.status(400).send({ error: 'Missing data. A new blog must have a Title, an Author, and a URL. Also, may or may not have the amount of Likes it has' })
 
-  const userFromToken = request.token
+  const userFromToken = request.user
+  if(!userFromToken.id) return response.status(401).json({ error: 'invalid token' })
 
   try {
     const user = await User.findById(userFromToken.id)
@@ -57,7 +58,8 @@ blogsRouter.delete('/:id', async (request, response, next) => {
   const { id } = request.params
 
   try {
-    const userFromToken = request.token
+    const userFromToken = request.user
+    if(!userFromToken.id) return response.status(401).json({ error: 'invalid token' })
 
     const blogToDelete = await Blog.findById(id)
 
