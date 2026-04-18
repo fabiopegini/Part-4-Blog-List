@@ -1,4 +1,5 @@
 const blogsRouter = require('express').Router()
+const middleware = require('../utils/middleware')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 
@@ -24,7 +25,7 @@ blogsRouter.get('/:id', async (request, response, next) => {
   }
 })
 
-blogsRouter.post('/', async (request, response, next) => {
+blogsRouter.post('/', middleware.userExtractor, async (request, response, next) => {
   const body = request.body
 
   if (!body.title || !body.author || !body.url) return response.status(400).send({ error: 'Missing data. A new blog must have a Title, an Author, and a URL. Also, may or may not have the amount of Likes it has' })
@@ -54,7 +55,7 @@ blogsRouter.post('/', async (request, response, next) => {
   }
 })
 
-blogsRouter.delete('/:id', async (request, response, next) => {
+blogsRouter.delete('/:id', middleware.userExtractor, async (request, response, next) => {
   const { id } = request.params
 
   try {

@@ -9,7 +9,7 @@ const api = supertest(app)
 
 const Blog = require('../models/blog')
 
-describe('api tests with some blogs already in the db', () => {
+describe('api tests with some blogs already in the db', async () => {
   beforeEach(async () => {
     await Blog.deleteMany()
   
@@ -35,16 +35,44 @@ describe('api tests with some blogs already in the db', () => {
     const blogs = await helper.getAllBlogs()
 
     const blogsKeys = blogs.map(blog => Object.keys(blog))
-
+    
     assert.strictEqual(blogsKeys[0].includes('id'), true)
     assert.strictEqual(blogsKeys[0].includes('_id'), false)
   })
-
-
-  describe('add one blog tests', () => {
+  
+  // NOTE:
+  // ONE LOGIN TO RULE THEM ALL
+  // well, not really... unless...
+  const loginResponse = await api.post('/api/login')
+  .send(helper.userSample)
+  const token = loginResponse.body.token
+  
+  describe('add one blog tests', async () => {
     test('a new blog can be added successfully and with the intended content', async () => {
       const oldBlogs = await helper.getAllBlogs()
+      
+      const newBlog = {
+        title: "New Added Blog",
+        author: "John Doe",
+        url: "https://fullstackopen.com/",
+        likes: 50,
+      }
+      
+      const response = await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-type', /application\/json/)
+      
+      const newBlogs = await helper.getAllBlogs()
 
+      const newBlogWithId = { id: response.body.id, user: response.body.user, ...newBlog}
+
+      assert.strictEqual(newBlogs.length, oldBlogs.length + 1)
+      assert.deepStrictEqual(response.body, newBlogWithId)
+    })
+
+    test('trying to add a new blog fails when a token is not provided', async () => {      
       const newBlog = {
         title: "New Added Blog",
         author: "John Doe",
@@ -54,15 +82,9 @@ describe('api tests with some blogs already in the db', () => {
       
       const response = await api.post('/api/blogs')
       .send(newBlog)
-      .expect(201)
-      .expect('Content-type', /application\/json/)
-      
-      const newBlogs = await helper.getAllBlogs()
+      .expect(401)
 
-      const newBlogWithId = { id: response.body.id, ...newBlog}
-
-      assert.strictEqual(newBlogs.length, oldBlogs.length + 1)
-      assert.deepStrictEqual(response.body, newBlogWithId)
+      assert.strictEqual(response.statusCode, 401)
     })
 
     test('default value for a blog\'s likes is 0', async () => {
@@ -73,6 +95,7 @@ describe('api tests with some blogs already in the db', () => {
       }
 
       const response = await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
 
       assert.strictEqual(response.body.likes, 0)
@@ -98,10 +121,13 @@ describe('api tests with some blogs already in the db', () => {
       }
 
       const noAuthorResponse = await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlogNoAuthor)
       const noTitleResponse = await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlogNoTitle)
       const noUrlResponse = await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlogNoUrl)
 
       assert.strictEqual(noAuthorResponse.statusCode, 400)
@@ -110,17 +136,32 @@ describe('api tests with some blogs already in the db', () => {
     })
   })
 
-  test('delete one blog', async () => {
-    const oldBlogs = await helper.getAllBlogs()
-    const blogToDelete = oldBlogs[0]
+  test('delete one blog as its creator', async () => {
+    const newBlog = {
+      title: "New Added Blog",
+      author: "John Doe",
+      url: "https://fullstackopen.com/",
+      likes: 50,
+    }
+      
+    const response = await api.post('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
+    .send(newBlog)
+    .expect(201)
+    .expect('Content-type', /application\/json/)
 
-    await api.delete('/api/blogs/' + blogToDelete.id)
+    const addedBlog = response.body
+    
+    const oldBlogs = await helper.getAllBlogs()
+
+    await api.delete('/api/blogs/' + addedBlog.id)
+    .set('Authorization', `Bearer ${token}`)
     .expect(200)
 
     const blogsAfter = await helper.getAllBlogs()
 
     assert.strictEqual(blogsAfter.length, oldBlogs.length - 1)
-    assert.strictEqual(blogsAfter.includes(blogToDelete), false)
+    assert.strictEqual(blogsAfter.includes(addedBlog), false)
   })
 
   describe('modifiy one blog', async () => {
